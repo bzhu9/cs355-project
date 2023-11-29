@@ -39,8 +39,12 @@ def sending_message(c):
 
     while True:
         msg = input("")
-        with open(msg, "rb") as f:
-            digest = hashlib.file_digest(f, "sha256")
+        try:
+            with open(msg, "rb") as f:
+                digest = hashlib.file_digest(f, "sha256")
+        except Exception as e:
+            print("File does not exist!")
+            continue
         # c.send(rsa.encrypt(msg.encode(), public_partner))
         hash = digest.hexdigest().encode()
         c.send(rsa.encrypt(hash, public_partner))
