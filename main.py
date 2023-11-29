@@ -1,6 +1,6 @@
-import socket
 import threading
 import socket
+import hashlib
 
 import rsa
 
@@ -36,14 +36,20 @@ else:
     exit()
 
 def sending_message(c):
+
     while True:
         msg = input("")
-        c.send(rsa.encrypt(msg.encode(), public_partner))
-        print("You: " + msg)
+        with open(msg, "rb") as f:
+            digest = hashlib.file_digest(f, "sha256")
+        # c.send(rsa.encrypt(msg.encode(), public_partner))
+        hash = digest.hexdigest().encode()
+        c.send(rsa.encrypt(hash, public_partner))
+        print("You: " + digest.hexdigest())
 
 def receiving_message(c):
     while True:
-        print("Stranger: " + rsa.decrypt(c.recv(1024), private_key).decode())
+        msg = rsa.decrypt(c.recv(1024), private_key).decode()
+        print("Stranger: " + msg)
 
-threading.Thread(target=sending_message, args=(client,)).start()
-threading.Thread(target=receiving_message, args=(client,)).start()
+threading.Thread(target=sending_message, args=(client, )).start()
+threading.Thread(target=receiving_message, args=(client, )).start()
