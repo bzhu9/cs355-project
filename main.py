@@ -4,6 +4,7 @@ import hashlib
 
 import rsa
 
+import time
 
 public_key, private_key = rsa.newkeys(1024)
 public_partner = None
@@ -38,22 +39,32 @@ else:
 def sending_message(c):
 
     while True:
-        msg = input("")
-        try:
-            with open(msg, "rb") as f:
-                digest = hashlib.file_digest(f, "sha256")
-        except Exception as e:
-            print("File does not exist!")
-            continue
-        # c.send(rsa.encrypt(msg.encode(), public_partner))
-        hash = digest.hexdigest().encode()
-        c.send(rsa.encrypt(hash, public_partner))
-        print("You: " + digest.hexdigest())
+        files = []
+        hashes = []
+        while len(hashes) < 5:
+            msg = input("")
+            try:
+                with open(msg, "rb") as f:
+                    digest = hashlib.file_digest(f, "sha256")
+                    files.append(msg)
+                    hashes.append(digest.hexdigest())
+            except Exception as e:
+                print("File does not exist!")
+                continue
+        for h in hashes:
+            c.send(rsa.encrypt(h.encode(), public_partner))
+            print("You: " + h)
+            time.sleep(0.5)
+        break
 
 def receiving_message(c):
+    count = 0
     while True:
         msg = rsa.decrypt(c.recv(1024), private_key).decode()
         print("Stranger: " + msg)
+        count += 1
+        if count == 5:
+            break
 
 threading.Thread(target=sending_message, args=(client, )).start()
 threading.Thread(target=receiving_message, args=(client, )).start()
